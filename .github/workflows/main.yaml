@@ -95,3 +95,10 @@ jobs:
             echo "$CONTAINER_IP"
             echo "Testing....................."
             wget -q -O - localhost:5000/live | grep live
+   
+        - name: Push images
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            push: true
+            tags: ${{ vars.DOCKERHUB_USERNAME}}/solar:${{github.sha}}
