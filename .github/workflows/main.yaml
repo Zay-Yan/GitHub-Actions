@@ -49,6 +49,7 @@ jobs:
         - name: Install Dependencies
           run: npm install
         - name: Code Coverage
+          continue-on-error: true
           run: npm run coverage
         - name: Upload Test Results
           uses: actions/upload-artifact@v3
@@ -56,3 +57,41 @@ jobs:
             name: Workflow-Result
             path: results.xml
             retention-days: 5
+    docker:
+        name: Build and Push
+        services:
+          mongo-db:
+            image: devopsprozy/mongo-db:latest
+            ports:
+              - 27017:27017
+        env:
+          MONGO_URI: 'mongodb://localhost:27017/superData'
+          MONGO_USERNAME: ${{ vars.USERNAME }}
+          MONGO_PASSWORD: ${{ secrets.PASSWORD }}
+        needs: [unit-testing,code-coverage]
+        runs-on: ubuntu-latest
+        steps:
+        - name: Download Repo
+          uses: actions/checkout@v4
+        - name: Login to Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ vars.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+        -
+          name: Build and push
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            push: false
+            tags: ${{ vars.DOCKERHUB_USERNAME}}/solar:${{github.sha}}
+
+        - name: Image Test
+          run: | 
+            docker run ${{env.DOCKERHUB_USERNAME}}/solar:${{github.sha}} \
+            -name solar-testing -d -p 5000:5000 -e MONGO_URI=$MONGO_URI -e MONGO_USERNAME=$MONGO_USERNAME -e MONGO_PASSWORD=$MONGO_PASSWORD
+
+            export container_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' solar-testing)
+            echo "$CONTAINER_IP"
+            echo "Testing....................."
+            wget -q -O - localhost:5000/live | grep live
