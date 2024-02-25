@@ -49,9 +49,10 @@ jobs:
         - name: Install Dependencies
           run: npm install
         - name: Code Coverage
-          run: npm run converage
+          run: npm run coverage
         - name: Upload Test Results
           uses: actions/upload-artifact@v3
           with:
             name: Workflow-Result
             path: results.xml
+            retention-days: 5
