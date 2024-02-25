@@ -31,7 +31,7 @@ jobs:
           - name: Test Application
             run: npm test
           - name: Upload Test Results
-            uses: actions/upload-artifacts@v3
+            uses: actions/upload-artifact@v3
             with:
               name: Workflow-Result
               path: results.xml
