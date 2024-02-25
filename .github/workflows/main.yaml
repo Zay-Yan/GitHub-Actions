@@ -74,8 +74,8 @@ jobs:
         - name: Download Repo
           uses: actions/checkout@v4
         -
-          name: Build and push
-          uses: docker/build-push-action@v5
+          name: Build and Test
+          uses: docker/build-push-action@v4
           with:
             context: .
             push: false
