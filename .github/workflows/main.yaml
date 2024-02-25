@@ -86,7 +86,7 @@ jobs:
           uses: docker/build-push-action@v5
           with:
             context: .
-            push: false
+            push: push
             tags: ${{ vars.DOCKERHUB_USERNAME}}/solar:${{github.sha}} 
 
         - name: Image Test
@@ -99,9 +99,4 @@ jobs:
             echo "Testing....................."
             wget -q -O - localhost:5000/live | grep live
    
-        - name: Push images
-          uses: docker/build-push-action@v5
-          with:
-            context: .
-            push: true
-            tags: ${{ vars.DOCKERHUB_USERNAME}}/solar:${{github.sha}}
+       
