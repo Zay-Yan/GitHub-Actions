@@ -5,7 +5,10 @@ on:
     branches:
       - main
       - 'features/*'
-    
+env:
+  MONGO_URI: 'mongodb://localhost:27017/superData'
+  MONGO_USERNAME: ${{ vars.USERNAME }}
+  MONGO_PASSWORD: ${{ secrets.PASSWORD }}  
 jobs:
     unit-testing:
         name: NPM Testing
