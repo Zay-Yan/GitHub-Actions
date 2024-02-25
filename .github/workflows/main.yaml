@@ -121,7 +121,7 @@ jobs:
           kubeconfig: ${{secrets.KUBECONFIG}}
       - name: Get Cluster Info
         run: |
-          kubectl version --short
+          kubectl version
           kubectl get nodes
       - name: Get ingress IP address from controller and use as variable
         run: |  
