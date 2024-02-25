@@ -34,4 +34,24 @@ jobs:
             uses: actions/upload-artifact@v3
             with:
               name: Workflow-Result
+              path: test-results.xml
+
+     code-coverage:
+        name: Checking Code Coverage
+        runs-on: ubuntu-latest
+        steps:
+          - name: Download Repo
+            uses: actions/checkout@v4
+          - name: Setup NPM
+            uses: actions/setup-node@v4
+            with:
+              node-version: 20
+          - name: Install Dependencies
+            run: npm install
+          - name: Code Coverage
+            run: npm run converage
+          - name: Upload Test Results
+            uses: actions/upload-artifact@v3
+            with:
+              name: Workflow-Result
               path: results.xml
