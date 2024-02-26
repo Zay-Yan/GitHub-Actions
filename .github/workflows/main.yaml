@@ -13,7 +13,7 @@ jobs:
     unit-testing:
         name: NPM Testing
         runs-on: ubuntu-latest
-        services:
+        services: 
           mongo-db:
             image: devopsprozy/mongo-db:latest
             ports:
