@@ -142,7 +142,7 @@ jobs:
           aws configure set default.region ap-southeast-1 
           aws configure set default.output json
       - name: Get Cluster Info
-        run: 
+        run: |
           echo "kubectl get node" > gg.txt
           cat gg.txt
       - name: Get ingress IP address from controller and use as variable
