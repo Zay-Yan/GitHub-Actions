@@ -127,6 +127,13 @@ jobs:
           sudo unzip awscliv2.zip
           sudo ./aws/install --update
           aws --version
+      - name: AWS connection
+        run: |
+          aws configure
+          ${{secrets.ACCESS}}
+          ${{secrets.SECRET}}
+          ap-southeast-1
+          json
       - name: Get Cluster Info
         run: | 
           kubectl version
