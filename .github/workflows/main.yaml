@@ -115,10 +115,11 @@ jobs:
       - name: Install kubectl CLI
         uses: azure/setup-kubectl@v3
       - name: Configure kubeconfig file
-        uses: azure/k8s-set-context@v3
-        with:
-          method: kubeconfig
-          kubeconfig: ${{secrets.KUBECONFIG}}
+        run: |
+          mkdir ${HOME}/.kube
+          echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ${HOME}/.kube/config
+          cat ${HOME}/.kube/config
+        
       - name: Get Cluster Info
         run: | 
           kubectl version
