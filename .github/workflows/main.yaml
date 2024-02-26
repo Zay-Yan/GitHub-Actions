@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - 'features/*'
+
 env:
   MONGO_URI: 'mongodb://localhost:27017/superData'
   MONGO_USERNAME: ${{ vars.USERNAME }}
@@ -127,6 +128,11 @@ jobs:
           sudo unzip awscliv2.zip
           sudo ./aws/install --update
           aws --version
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+            role-to-assume: arn:aws:iam::896836667748:role/github #change to reflect your IAM role’s ARN
+            role-session-name: GitHub_to_AWS_via_FederatedOIDC
       - name: AWS connection
         run: |
           aws configure
