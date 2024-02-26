@@ -132,7 +132,7 @@ jobs:
       - name: AWS connection
         run: |
           aws configure set aws_access_key_id ${{secrets.ACCESS}}
-          aws configure set aws_secret_access_key ${{secrets.ACCESS}}
+          aws configure set aws_secret_access_key ${{secrets.SECRET}}
           aws configure set default.region ap-southeast-1 
           aws configure set default.output json
       - name: Get Cluster Info
