@@ -137,6 +137,7 @@ jobs:
           aws configure set default.output json
       - name: Get Cluster Info
         run: |
+          aws eks --region ap-southeast-1 update-kubeconfig --name zy
           sudo kubectl get node
       - name: Get ingress IP address from controller and use as variable
         run: |  
