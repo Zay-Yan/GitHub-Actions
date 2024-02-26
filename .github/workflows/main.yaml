@@ -114,7 +114,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install kubectl CLI
         uses: azure/setup-kubectl@v3
-
       - name: Create .kube directory
         run: mkdir -p ${HOME}/.kube
       - name: Configure kubeconfig file
@@ -125,7 +124,6 @@ jobs:
       - name: Get Cluster Info
         run: | 
           kubectl version
-          kubectl get nodes
       - name: Get ingress IP address from controller and use as variable
         run: |  
           echo "NGINX_IP=$(kubectl get svc -o json | jq -r '.status.loadBalancer.ingress[0].ip') >> $GITHUB_ENV "
