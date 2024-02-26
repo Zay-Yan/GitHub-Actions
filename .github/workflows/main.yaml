@@ -136,11 +136,11 @@ jobs:
           aws configure set default.region ap-southeast-1 
           aws configure set default.output json
       - name: Get Cluster Info
-        run: | 
-          kubectl version
+        run: |
+          sudo kubectl version
       - name: Get ingress IP address from controller and use as variable
         run: |  
-          echo "NGINX_IP=$(kubectl get svc -o json | jq -r '.status.loadBalancer.ingress[0].ip') >> $GITHUB_ENV "
+          echo "NGINX_HOSTNAME=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o json | jq -r '.status.loadBalancer.ingress[0].hostname') >> $GITHUB_ENV "
       - name: Get Cluster Info and Replace Token
         uses: cschleiden/replace-tokens@v1
         with:
@@ -151,7 +151,7 @@ jobs:
           NAMESPACE: ${{vars.NAMESPACE}}
           IMAGE: ${{vars.DOCKERHUB_USERNAME}}/solar:${{github.sha}} 
           REPLICAS: ${{ vars.REPLICAS}}
-          INGRESS_IP: ${{env.NGINX_IP}}
+          INGRESS_IP: ${{env.NGINX_HOSTNAME}}
       - name: Create MongoDB secret
         run: |
             kubectl create secret generic mongo-db-creds -n ${{vars.NAMESPACE}} \
