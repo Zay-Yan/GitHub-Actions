@@ -120,7 +120,12 @@ jobs:
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > ${HOME}/.kube/config
           cat ${HOME}/.kube/config
-        
+      - name: Configure AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          apt install unzip
+          unzip awscliv2.zip
+          sudo ./aws/install  
       - name: Get Cluster Info
         run: | 
           kubectl version
