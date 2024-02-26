@@ -114,7 +114,7 @@ jobs:
       - name: Download Repo
         uses: actions/checkout@v4
       - name: Install kubectl CLI
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v3 
       - name: Create .kube directory
         run: mkdir -p ${HOME}/.kube
       - name: Configure kubeconfig file
