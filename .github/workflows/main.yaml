@@ -137,7 +137,7 @@ jobs:
           aws configure set default.output json
       - name: Get Cluster Info
         run: |
-          sudo kubectl version
+          kubectl get node
       - name: Get ingress IP address from controller and use as variable
         run: |  
           echo "NGINX_HOSTNAME=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o json | jq -r '.status.loadBalancer.ingress[0].hostname') >> $GITHUB_ENV "
