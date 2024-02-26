@@ -126,7 +126,7 @@ jobs:
           sudo apt install unzip
           sudo unzip awscliv2.zip
           sudo ./aws/install --update
-          aws version
+          aws --version
       - name: Get Cluster Info
         run: | 
           kubectl version
