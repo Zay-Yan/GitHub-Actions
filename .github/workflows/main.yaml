@@ -64,6 +64,7 @@ jobs:
     
             
     sonarqube-scanning:
+      needs: code-coverage
       name: Analysis
       continue-on-error: true
       runs-on: ubuntu-latest
