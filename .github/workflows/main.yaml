@@ -4,8 +4,182 @@ on:
   push:
     branches:
       - main
-      - 'feature/*'
-    
+      - 'features/*'
+
+env:
+  MONGO_URI: 'mongodb://localhost:27017/superData'
+  MONGO_USERNAME: ${{ vars.USERNAME }}
+  MONGO_PASSWORD: ${{ secrets.PASSWORD }}  
 jobs:
     unit-testing:
-        name: Unit Testing
+        name: NPM Testing
+        runs-on: ubuntu-latest
+        services: 
+          mongo-db:
+            image: devopsprozy/mongo-db:latest
+            ports:
+              - 27017:27017
+        env:
+          MONGO_URI: 'mongodb://localhost:27017/superData'
+          MONGO_USERNAME: ${{ vars.USERNAME }}
+          MONGO_PASSWORD: ${{ secrets.PASSWORD }}
+        steps:
+          - name: Download Repo
+            uses: actions/checkout@v4
+          - name: Setup NPM
+            uses: actions/setup-node@v4
+            with:
+              node-version: 20
+          - name: Install Dependencies
+            run: npm install
+          - name: Test Application
+            run: npm test
+          - name: Upload Test Results
+            uses: actions/upload-artifact@v3
+            with:
+              name: Workflow-Result
+              path: test-results.xml
+
+    code-coverage:
+      name: Checking Code Coverage
+      runs-on: ubuntu-latest
+      steps:
+        - name: Download Repo
+          uses: actions/checkout@v4
+        - name: Setup NPM
+          uses: actions/setup-node@v4
+          with:
+            node-version: 20
+        - name: Install Dependencies
+          run: npm install
+        - name: Code Coverage
+          continue-on-error: true
+          run: npm run coverage
+        - name: Upload Test Results
+          uses: actions/upload-artifact@v3
+          with:
+            name: Workflow-Result
+            path: results.xml
+            retention-days: 5
+
+    docker:
+        name: Build and Push
+        services:
+          mongo-db:
+            image: devopsprozy/mongo-db:latest
+            ports:
+              - 27017:27017
+        env:
+          MONGO_URI: 'mongodb://localhost:27017/superData'
+          MONGO_USERNAME: ${{ vars.USERNAME }}
+          MONGO_PASSWORD: ${{ secrets.PASSWORD }}
+        needs: [unit-testing,code-coverage]
+        runs-on: ubuntu-latest
+        steps:
+        - name: Download Repo
+          uses: actions/checkout@v4
+        - name: Login to Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ vars.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+        -
+          name: Build and push
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            push: true
+            tags: ${{ vars.DOCKERHUB_USERNAME }}/solar:${{ github.sha }} 
+
+        - name: Image Test
+          run: | 
+            docker run --name solar-testing -d \
+             -p 3000:3000 \
+             -e MONGO_URI=$MONGO_URI \
+             -e MONGO_USERNAME=$MONGO_USERNAME \
+             -e MONGO_PASSWORD=$MONGO_PASSWORD \
+             ${{vars.DOCKERHUB_USERNAME}}/solar:${{github.sha}}
+
+            export container_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' solar-testing)
+            echo "$CONTAINER_IP"
+            echo "Testing....................."
+            wget -q -O - localhost:3000/live | grep live
+   
+    dev-deploy:
+      name: Deploy Dev
+      needs: docker
+      outputs:
+        HOST_URL: ${{steps.host-address.outputs.HOST}}
+      continue-on-error: true
+      runs-on: ubuntu-latest
+      steps:
+      - name: Download Repo
+        uses: actions/checkout@v4
+      - name: Install kubectl CLI
+        uses: azure/setup-kubectl@v3 
+      - name: Setup Kubeconfig
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{secrets.KUBE_CONFIG}}
+
+      # - name: Create .kube directory
+      #   run: mkdir -p ${HOME}/.kube
+      # # # - name: Configure kubeconfig file
+      # # #   run: |
+      # #     echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > ${HOME}/.kube/config
+      # #     cat ${HOME}/.kube/config
+      # # - name: Configure AWS CLI
+      # #   run: |
+      # #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      # #     sudo apt install unzip
+      # #     sudo unzip awscliv2.zip
+      # #     sudo ./aws/install --update
+      # #     aws --version
+      
+      - name: AWS connection
+        run: |
+          aws configure set aws_access_key_id ${{secrets.ACCESS}}
+          aws configure set aws_secret_access_key ${{secrets.SECRET}}
+          aws configure set default.region ap-southeast-1 
+          aws configure set default.output json
+      - name: Get Cluster Info
+        run: |
+          kubectl get node
+      - name: Get ingress IP address from controller and use as variable
+        run: |  
+          echo "NGINX_HOSTNAME=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o json | jq -r '.status.loadBalancer.ingress[0].hostname')" >> $GITHUB_ENV
+      - name: Get Cluster Info and Replace Token
+        uses: cschleiden/replace-tokens@v1
+        with:
+          tokenPrefix: '{' 
+          tokenSuffix: '}'
+          files: '["kubernetes/development/*.yaml"]' 
+        env:
+          NAMESPACE: ${{vars.NAMESPACE}}
+          IMAGE: ${{vars.DOCKERHUB_USERNAME}}/solar:${{github.sha}} 
+          REPLICAS: ${{ vars.REPLICAS}}
+          INGRESS_IP: ${{env.NGINX_HOSTNAME}}
+      - name: Create MongoDB secret
+        run: |
+         kubectl create secret generic mongo-db-creds -n dev --from-literal=MONGO_URI=mongodb://localhost:27017/superData  --from-literal=MONGO_USERNAME=non-prod-user --from-literal=MONGO_PASSWORD=non-prod-password --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to Development Environment
+        run: |
+          kubectl apply -f kubernetes/development
+      - name: Host URL and testing
+        id: host-address
+        run: |
+          echo "HOST=$(kubectl -n ${{vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> $GITHUB_OUTPUT
+   
+    integration-testing:
+        name:  Integration-testing
+        needs: dev-deploy
+        runs-on: ubuntu-latest
+        steps:
+          - name: Testing
+            env:
+              URL: ${{needs.dev-deploy.outputs.HOST_URL}}
+            run: |
+              echo $URL
+              curl http://$URL/live -s -k | jq -r .status | grep -i live
