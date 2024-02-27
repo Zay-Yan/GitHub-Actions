@@ -61,9 +61,23 @@ jobs:
             name: Workflow-Result
             path: results.xml
             retention-days: 5
+    
+            
+    sonarqube-scanning:
+      name: Analysis
+      continue-on-error: true
+      runs-on: ubuntu-latest
+      steps:
+      - name: Analyze with SonarQube
+        uses: SonarSource/sonarqube-scan-action@7295e71c9583053f5bf40e9d4068a0c974603ec8
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}  
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}    
 
     docker:
         name: Build and Push
+        continue-on-error: true
         services:
           mongo-db:
             image: devopsprozy/mongo-db:latest
@@ -88,9 +102,22 @@ jobs:
           uses: docker/build-push-action@v5
           with:
             context: .
-            push: true
+            push: false
             tags: ${{ vars.DOCKERHUB_USERNAME }}/solar:${{ github.sha }} 
 
+        - name: Run Trivy vulnerability scanner for Docker image
+          uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+          with:
+            image-ref: '{{ vars.DOCKERHUB_USERNAME }}/solar:${{ github.sha }}'
+            format: 'template'
+            template: '@/contrib/sarif.tpl'
+            output: 'trivy-solar-results.sarif'
+            severity: 'WARNING,CRITICAL,HIGH'
+      
+        - name: Upload Trivy scan results to GitHub Security tab
+          uses: github/codeql-action/upload-sarif@v2
+          with:
+            sarif_file: 'trivy-solar-results.sarif'
         - name: Image Test
           run: | 
             docker run --name solar-testing -d \
