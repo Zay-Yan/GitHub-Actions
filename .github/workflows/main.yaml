@@ -146,7 +146,7 @@ jobs:
           kubectl get node
       - name: Get ingress IP address from controller and use as variable
         run: |  
-          echo "NGINX_HOSTNAME=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o json | jq -r '.status.loadBalancer.ingress[0].hostname') >> $GITHUB_ENV "
+          echo "NGINX_HOSTNAME=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o json | jq -r '.status.loadBalancer.ingress[0].hostname')" >> $GITHUB_ENV
       - name: Get Cluster Info and Replace Token
         uses: cschleiden/replace-tokens@v1
         with:
