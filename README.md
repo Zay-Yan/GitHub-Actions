@@ -1,5 +1,7 @@
 # Solar System NodeJS Application
 
+![CHEESE](images/solar-system.png)
+
 A simple HTML+MongoDB+NodeJS project to display Solar System and it's planets.
 
 ---
