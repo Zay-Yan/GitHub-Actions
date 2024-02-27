@@ -170,7 +170,7 @@ jobs:
       - name: Host URL and testing
         id: host-address
         run: |
-          echo "HOST=$(kubectl -n ${{vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> "$GITHUB_OUTPUT"
+          echo "HOST=$(kubectl -n ${{vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> $GITHUB_OUTPUT
    
     integration-testing:
         name:  Integration-testing
